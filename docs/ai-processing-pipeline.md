@@ -46,20 +46,31 @@ results become visible to practitioners/assistants once jobs complete.
 ## Required Metadata on Every AI Output
 
 Every AI-generated record (`ExtractionRun`/`ExtractedField`,
-`ClassificationResult`, `TimelineEvent`, `EvidenceAssessment`, `CaseFlag`)
-must carry:
+`ClassificationResult`, `TimelineEvent`, `EvidenceAssessment`) must carry:
 
 - `provider`
 - `model` / version
 - prompt/schema version
 - `generated_at`
-- `confidence`
+- `confidence` (scoped to that record — see
+  [database-schema.md](./database-schema.md) for the run-level vs
+  field-level vs document-level distinction)
 - source document reference
 - source page (where applicable)
 - source coordinates (where possible)
 - `status`: `pending_review | approved | rejected | overridden`
 - reviewer identity (once reviewed)
 - review timestamp (once reviewed)
+
+`CaseFlag` is a partial exception: it can be raised by `ai`, `human`, or
+`system` (`raised_by_type`), so the provider/model/schema-version/confidence/
+generated-at fields are populated only when `raised_by_type = 'ai'` (null
+otherwise). A `CaseFlag`'s own `status` (`open|in_progress|resolved|
+dismissed`) tracks the flag's resolution lifecycle and is intentionally a
+different vocabulary from the `pending_review|approved|rejected|overridden`
+review status used on the other AI outputs above — resolving a flag is a
+distinct action from approving/rejecting the AI output that may have raised
+it.
 
 This metadata contract is what allows the review screen to always show
 provenance and confidence, and lets `CaseFlag`s explain — in human-readable

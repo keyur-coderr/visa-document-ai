@@ -7,6 +7,11 @@
  * Supabase migrations (Phase 4) generate `types/database.ts`. No runtime
  * validation library is used here yet (Zod is introduced when forms/APIs are
  * implemented) — these are compile-time-only types.
+ *
+ * Naming convention: docs/database-schema.md and Postgres columns use
+ * snake_case; every type below uses the equivalent camelCase field name
+ * (e.g. `firm_id` -> `firmId`). This is a deliberate 1:1 mapping, not a
+ * naming inconsistency.
  */
 
 // ---------------------------------------------------------------------------
@@ -131,6 +136,12 @@ export interface Client {
 // 5. Case
 // ---------------------------------------------------------------------------
 
+/**
+ * Coarse-grained case lifecycle used for lists/dashboards/filtering. This is
+ * a denormalized projection kept in sync when a CaseMilestone (see
+ * MilestoneKey) completes; CaseMilestone rows remain the source of truth for
+ * milestone history — this field exists only for fast reads.
+ */
 export type CaseStatus =
   | "draft"
   | "intake_in_progress"
@@ -142,7 +153,15 @@ export type CaseStatus =
   | "decision_received"
   | "closed";
 
-export type RiskTier = "standard" | "elevated" | "phase-3-restricted";
+/**
+ * Case-level risk assessment set/overridden by the practitioner. Distinct
+ * from the stream's `LiabilityTier` (src/config/immigration-streams/schema.ts),
+ * which classifies the stream itself — a case's risk tier is informed by,
+ * but tracked independently of, its stream's liability tier (e.g. a
+ * phase-3-restricted stream's cases will typically but not necessarily be
+ * "high").
+ */
+export type RiskTier = "standard" | "elevated" | "high";
 
 export interface Case {
   id: CaseId;
@@ -227,6 +246,8 @@ export type DocumentRequirementStatus =
 export interface DocumentRequirement {
   id: DocumentRequirementId;
   caseId: CaseId;
+  /** Stream config version this requirement was materialized from (see Case.streamConfigVersion). */
+  streamConfigVersion: number;
   participantId: CaseParticipantId | null;
   requirementKey: string;
   label: string;
@@ -287,7 +308,13 @@ export interface DocumentVersion {
 
 export type ReviewStatus = "pending_review" | "approved" | "rejected" | "overridden";
 
-/** Metadata every AI-generated record must carry (docs/ai-processing-pipeline.md). */
+/**
+ * Metadata every AI-generated record must carry (docs/ai-processing-pipeline.md).
+ * `confidence` is scoped to whatever the extending entity represents (e.g. an
+ * overall extraction run, a single field, a document classification, a
+ * timeline event, or an evidence assessment) — see the comment on each
+ * entity's own `confidence`-bearing field for the exact scope.
+ */
 export interface AiOutputMetadata {
   provider: string;
   model: string;
@@ -302,6 +329,7 @@ export interface AiOutputMetadata {
 
 export type ExtractionRunStatus = "queued" | "running" | "completed" | "failed";
 
+/** Confidence (inherited from AiOutputMetadata) is the aggregate across the whole run; see ExtractedField.confidence for per-field confidence. */
 export interface ExtractionRun extends AiOutputMetadata {
   id: ExtractionRunId;
   documentId: DocumentId;
@@ -325,7 +353,14 @@ export interface ExtractedField {
   caseId: CaseId;
   documentId: DocumentId;
   fieldKey: string;
-  extractedValue: EncryptedString | string;
+  /**
+   * Encrypted at the persistence layer when this field's ExtractionFieldSchema
+   * (src/config/immigration-streams/schema.ts) has `sensitive: true`. Not
+   * typed as `EncryptedString` because sensitivity is schema-driven per
+   * `fieldKey`, not statically known from this generic shape.
+   */
+  extractedValue: string;
+  /** Confidence for this specific field, independent of the parent ExtractionRun's overall confidence. */
   confidence: number;
   sourcePage: number | null;
   sourceCoordinates: SourceCoordinates | null;
@@ -347,9 +382,14 @@ export interface ClassificationAlternative {
 export interface ClassificationResult extends AiOutputMetadata {
   id: ClassificationResultId;
   documentId: DocumentId;
+  /** Ordinal per document; the row with the highest runVersion for a given documentId is authoritative. */
+  runVersion: number;
+  /** True only for the authoritative (highest runVersion) row per document; re-classification sets the prior row's isLatest to false instead of deleting it. */
+  isLatest: boolean;
   predictedCategory: string;
   alternatives: ClassificationAlternative[];
   finalCategory: string | null;
+  reviewStatus: ReviewStatus;
   reviewedBy: UserId | null;
   reviewedAt: ISODateString | null;
 }
@@ -385,15 +425,16 @@ export interface CaseFact {
  */
 export type EvidenceStrength = "weak" | "moderate" | "strong";
 
-export interface EvidenceAssessment {
+export interface EvidenceAssessment extends AiOutputMetadata {
   id: EvidenceAssessmentId;
   caseId: CaseId;
   requirementId: DocumentRequirementId;
   strength: EvidenceStrength;
   reason: string;
   supportingDocumentIds: DocumentId[];
-  generatedAt: ISODateString;
+  reviewStatus: ReviewStatus;
   approvedBy: UserId | null;
+  approvedAt: ISODateString | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -424,8 +465,16 @@ export interface CaseFlag {
   description: string;
   relatedDocumentIds: DocumentId[];
   relatedFieldIds: ExtractedFieldId[];
+  /**
+   * Resolution lifecycle for the flag itself — intentionally a separate
+   * vocabulary from `ReviewStatus`, since resolving a flag (open -> resolved)
+   * is a distinct action from approving/rejecting the AI output that may have
+   * raised it.
+   */
   status: CaseFlagStatus;
   raisedByType: RaisedByType;
+  /** Present only when raisedByType === "ai"; null for human/system-raised flags. */
+  aiMetadata: AiOutputMetadata | null;
   assignedTo: UserId | null;
   resolvedBy: UserId | null;
   resolutionNote: string | null;
@@ -437,7 +486,7 @@ export interface CaseFlag {
 // 18. TimelineEvent
 // ---------------------------------------------------------------------------
 
-export interface TimelineEvent {
+export interface TimelineEvent extends AiOutputMetadata {
   id: TimelineEventId;
   caseId: CaseId;
   participantId: CaseParticipantId | null;
@@ -446,15 +495,19 @@ export interface TimelineEvent {
   startDate: ISODateString;
   endDate: ISODateString | null;
   sourceDocumentIds: DocumentId[];
-  confidence: number;
   reviewStatus: ReviewStatus;
   approvedBy: UserId | null;
+  approvedAt: ISODateString | null;
 }
 
 // ---------------------------------------------------------------------------
 // 19. CaseMilestone
 // ---------------------------------------------------------------------------
 
+/**
+ * Granular milestone keys with full audit history via CaseMilestone rows.
+ * See CaseStatus for the coarse-grained lifecycle field kept in sync with these.
+ */
 export type MilestoneKey =
   | "intake"
   | "documents_complete"

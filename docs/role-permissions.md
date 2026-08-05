@@ -61,6 +61,18 @@ Typed capability definitions live in
 - Approval-type actions (`Approval` entity creation, `CaseFlag` resolution)
   are restricted to `practitioner` at the service layer regardless of what
   the UI renders.
+- `CaseFact` (normalized, approved facts) is practitioner create/read only;
+  assistants get read-only access for context and clients get none, since
+  facts represent protected/approved legal-relevant data.
+- `CaseParticipant` (spouse/dependants/sponsors) follows the same access as
+  the parent case: practitioners and assistants can create/read/update within
+  their scope, clients can create/update their own case's participants as
+  part of intake.
+- `Notification` is read-only for its recipient across all three roles.
+- Server code should call `isCapabilityAllowed` (not `hasCapability` alone)
+  from [src/types/permissions.ts](../src/types/permissions.ts), which checks
+  `ROLE_CAPABILITIES` and `FORBIDDEN_CAPABILITIES` together so the two lists
+  can never silently contradict each other.
 - RLS policies mirror this matrix per table in `supabase/policies/` (added in
   Phase 4) — e.g., clients can `SELECT`/`UPDATE` only rows where
   `case.client_id` matches their own client record, and can never read

@@ -328,3 +328,20 @@ export function createPlaceholderStreamConfig(params: {
 
 /** Registry shape — populated in a later phase by config/immigration-streams/registry.ts. */
 export type ImmigrationStreamRegistry = Record<StreamKey, ImmigrationStreamConfig>;
+
+// ---------------------------------------------------------------------------
+// Compliance guard — nothing in the type system alone stops a future config
+// author from setting draftingRules.level beyond "none" on a phase-3-restricted
+// stream, which would contradict the explicit MVP exclusion of substantive
+// drafting for H&C/refugee/PRRA/TRP (docs/architecture.md §9). Registry
+// loading and any config-editing UI must call this before accepting a config.
+// ---------------------------------------------------------------------------
+
+export function isDraftingRulesAllowed(
+  config: Pick<ImmigrationStreamConfig, "liabilityTier" | "draftingRules">,
+): boolean {
+  if (config.liabilityTier === "phase-3-restricted") {
+    return config.draftingRules.level === "none";
+  }
+  return true;
+}

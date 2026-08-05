@@ -23,9 +23,10 @@ export type PermissionResource =
   | "firm_settings"
   | "firm_branding"
   | "team_members"
-  | "billing"
+  | "billing" // reserved guardrail placeholder; billing/payments is an explicit MVP exclusion (docs/mvp-roadmap.md) and is never granted to any role below
   | "client"
   | "case"
+  | "case_participant"
   | "intake"
   | "checklist"
   | "document"
@@ -33,6 +34,7 @@ export type PermissionResource =
   | "classification_result"
   | "evidence_assessment"
   | "timeline_event"
+  | "case_fact"
   | "case_flag"
   | "case_milestone"
   | "deadline"
@@ -83,6 +85,9 @@ export const ROLE_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "case", action: "read" },
     { resource: "case", action: "update" },
     { resource: "case", action: "assign" },
+    { resource: "case_participant", action: "create" },
+    { resource: "case_participant", action: "read" },
+    { resource: "case_participant", action: "update" },
     { resource: "intake", action: "read" },
     { resource: "checklist", action: "read" },
     { resource: "checklist", action: "update" },
@@ -96,6 +101,8 @@ export const ROLE_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "evidence_assessment", action: "approve" },
     { resource: "timeline_event", action: "approve" },
     { resource: "timeline_event", action: "override" },
+    { resource: "case_fact", action: "create" },
+    { resource: "case_fact", action: "read" },
     { resource: "case_flag", action: "read" },
     { resource: "case_flag", action: "update" },
     { resource: "case_milestone", action: "update" },
@@ -108,10 +115,13 @@ export const ROLE_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "approval", action: "create" },
     { resource: "compliance_export", action: "export" },
     { resource: "audit_event", action: "read" },
+    { resource: "notification", action: "read" },
   ],
   assistant: [
     { resource: "client", action: "read" },
     { resource: "case", action: "read" },
+    { resource: "case_participant", action: "read" },
+    { resource: "case_participant", action: "update" },
     { resource: "intake", action: "read" },
     { resource: "intake", action: "create" },
     { resource: "checklist", action: "read" },
@@ -121,13 +131,17 @@ export const ROLE_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "document", action: "update" },
     { resource: "extracted_field", action: "read" },
     { resource: "classification_result", action: "read" },
+    { resource: "case_fact", action: "read" },
     { resource: "case_flag", action: "read" },
     { resource: "case_milestone", action: "update" }, // limited to "ready for review" transitions
     { resource: "message", action: "create" },
     { resource: "message", action: "read" },
+    { resource: "notification", action: "read" },
   ],
   client: [
     { resource: "case", action: "read" },
+    { resource: "case_participant", action: "create" }, // e.g. adding a spouse/dependant during intake
+    { resource: "case_participant", action: "update" },
     { resource: "intake", action: "create" },
     { resource: "intake", action: "update" },
     { resource: "checklist", action: "read" },
@@ -136,6 +150,7 @@ export const ROLE_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "message", action: "create" },
     { resource: "message", action: "read" },
     { resource: "client", action: "update" }, // own profile, limited fields
+    { resource: "notification", action: "read" },
   ],
 };
 
@@ -184,6 +199,8 @@ export const FORBIDDEN_CAPABILITIES: Record<UserRole, Permission[]> = {
     { resource: "classification_result", action: "approve" },
     { resource: "evidence_assessment", action: "approve" },
     { resource: "timeline_event", action: "approve" },
+    { resource: "case_fact", action: "create" },
+    { resource: "case_fact", action: "update" },
     { resource: "compliance_export", action: "export" },
     { resource: "billing", action: "update" },
     { resource: "firm_settings", action: "update" },
@@ -191,7 +208,25 @@ export const FORBIDDEN_CAPABILITIES: Record<UserRole, Permission[]> = {
   client: [
     { resource: "extracted_field", action: "approve" },
     { resource: "case_flag", action: "update" },
+    { resource: "case_fact", action: "read" },
+    { resource: "case_fact", action: "create" },
+    { resource: "case_fact", action: "update" },
     { resource: "compliance_export", action: "export" },
     { resource: "audit_event", action: "read" },
   ],
 };
+
+/**
+ * The authoritative check: granted by ROLE_CAPABILITIES AND not present in
+ * FORBIDDEN_CAPABILITIES. Ties both lists together so a future edit that adds
+ * a capability already listed as forbidden for that role fails this check
+ * instead of silently creating a contradiction. Server services/actions
+ * should call this (plus a scope check against PermissionScope) rather than
+ * `hasCapability` alone.
+ */
+export function isCapabilityAllowed(role: UserRole, permission: Permission): boolean {
+  const forbidden = FORBIDDEN_CAPABILITIES[role].some(
+    (denied) => denied.resource === permission.resource && denied.action === permission.action,
+  );
+  return !forbidden && hasCapability(role, permission);
+}
