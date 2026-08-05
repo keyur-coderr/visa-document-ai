@@ -1,0 +1,81 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ChevronDownIcon } from "@/components/ui/icons";
+
+/** Mock signed-in practitioner used until Supabase Auth is wired up in Phase 4. */
+const mockCurrentUser = {
+  name: "Priya Nair",
+  role: "Practitioner (RCIC)",
+  initials: "PN",
+};
+
+export function UserMenu() {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="focus-ring flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+          {mockCurrentUser.initials}
+        </span>
+        <span className="hidden text-left sm:block">
+          <span className="block text-sm font-medium text-neutral-800 dark:text-neutral-200">{mockCurrentUser.name}</span>
+          <span className="block text-xs text-neutral-500 dark:text-neutral-400">{mockCurrentUser.role}</span>
+        </span>
+        <ChevronDownIcon className="h-3.5 w-3.5 text-neutral-400" />
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 z-30 mt-2 w-48 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3.5 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Profile
+          </Link>
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3.5 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Settings
+          </Link>
+          <Link
+            href="/login"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block border-t border-neutral-200 px-3.5 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Sign out
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}

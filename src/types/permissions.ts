@@ -42,7 +42,8 @@ export type PermissionResource =
   | "agreement"
   | "approval"
   | "compliance_export"
-  | "audit_event";
+  | "audit_event"
+  | "notification";
 
 export type PermissionAction =
   | "create"
