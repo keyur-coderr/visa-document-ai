@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { FormField, FormInput, FormLabel } from "@/components/ui/Form";
 
 export default function ResetPasswordPage() {
   return (
@@ -7,36 +9,17 @@ export default function ResetPasswordPage() {
       <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Choose a new password for your account.</p>
 
       <form className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            New password
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="••••••••"
-            className="focus-ring mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-        </div>
-        <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Confirm new password
-          </label>
-          <input
-            id="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="••••••••"
-            className="focus-ring mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-        </div>
-        <button
-          type="button"
-          className="focus-ring w-full rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
+        <FormField>
+          <FormLabel htmlFor="password">New password</FormLabel>
+          <FormInput id="password" type="password" autoComplete="new-password" placeholder="••••••••" />
+        </FormField>
+        <FormField>
+          <FormLabel htmlFor="confirm-password">Confirm new password</FormLabel>
+          <FormInput id="confirm-password" type="password" autoComplete="new-password" placeholder="••••••••" />
+        </FormField>
+        <Button type="button" className="w-full">
           Reset password
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm">

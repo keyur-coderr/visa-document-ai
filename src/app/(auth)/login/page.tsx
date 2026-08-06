@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { FormField, FormInput, FormLabel } from "@/components/ui/Form";
 
 export default function LoginPage() {
   return (
@@ -9,41 +11,22 @@ export default function LoginPage() {
       </p>
 
       <form className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@firm.com"
-            className="focus-ring mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-        </div>
-        <div>
+        <FormField>
+          <FormLabel htmlFor="email">Email address</FormLabel>
+          <FormInput id="email" type="email" autoComplete="email" placeholder="you@firm.com" />
+        </FormField>
+        <FormField>
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Password
-            </label>
+            <FormLabel htmlFor="password">Password</FormLabel>
             <Link href="/forgot-password" className="focus-ring rounded text-xs font-medium text-brand-600 hover:text-brand-700">
               Forgot password?
             </Link>
           </div>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="focus-ring mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-        </div>
-        <button
-          type="button"
-          className="focus-ring w-full rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
+          <FormInput id="password" type="password" autoComplete="current-password" placeholder="••••••••" />
+        </FormField>
+        <Button type="button" className="w-full">
           Sign in
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-xs text-neutral-400">

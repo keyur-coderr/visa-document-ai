@@ -14,6 +14,8 @@ import {
 import { mockCases } from "@/lib/mock/cases";
 import { caseStatusPresentation } from "@/lib/utilities/status";
 import { DashboardIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
 
 function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -26,11 +28,31 @@ function formatRelativeTime(iso: string): string {
 export default function DashboardPage() {
   const [status, setStatus] = useDemoPageState("ready");
   const summaryCases = mockCases.slice(0, 4);
+  const { showToast, clearToasts } = useToast();
 
   return (
     <PageContainer
       title="Dashboard"
       description="A firm-wide overview of active cases, recent activity, and AI processing status."
+      actions={
+        <>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              showToast({
+                title: "Toast System Active",
+                description: "This is a Phase 1 UI notification placeholder.",
+                tone: "info",
+              })
+            }
+          >
+            Show Toast
+          </Button>
+          <Button variant="ghost" onClick={clearToasts}>
+            Clear
+          </Button>
+        </>
+      }
     >
       <PageState
         status={status}
