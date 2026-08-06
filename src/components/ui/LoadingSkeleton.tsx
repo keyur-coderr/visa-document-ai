@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utilities/cn";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export interface LoadingSkeletonProps {
   className?: string;
@@ -10,23 +11,23 @@ export interface LoadingSkeletonProps {
 export function LoadingSkeleton({ className, rows = 4, variant = "line" }: LoadingSkeletonProps) {
   if (variant === "card") {
     return (
-      <div className={cn("animate-pulse rounded-xl border border-neutral-200 p-5 dark:border-neutral-800", className)}>
-        <div className="h-3 w-24 rounded bg-neutral-200 dark:bg-neutral-800" />
-        <div className="mt-3 h-6 w-16 rounded bg-neutral-200 dark:bg-neutral-800" />
-        <div className="mt-2 h-2.5 w-32 rounded bg-neutral-200 dark:bg-neutral-800" />
+      <div className={cn("rounded-[var(--radius-xl)] border border-[color:var(--color-border)] p-5", className)}>
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="mt-3 h-6 w-16" />
+        <Skeleton className="mt-2 h-2.5 w-32" />
       </div>
     );
   }
 
   if (variant === "table") {
     return (
-      <div className={cn("animate-pulse divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800", className)}>
+      <div className={cn("divide-y divide-[color:var(--color-border)] rounded-[var(--radius-xl)] border border-[color:var(--color-border)]", className)}>
         {Array.from({ length: rows }).map((_, index) => (
           <div key={index} className="flex items-center gap-4 px-4 py-3.5">
-            <div className="h-3 w-1/4 rounded bg-neutral-200 dark:bg-neutral-800" />
-            <div className="h-3 w-1/6 rounded bg-neutral-200 dark:bg-neutral-800" />
-            <div className="h-3 w-1/6 rounded bg-neutral-200 dark:bg-neutral-800" />
-            <div className="ml-auto h-3 w-16 rounded bg-neutral-200 dark:bg-neutral-800" />
+            <Skeleton className="h-3 w-1/4" />
+            <Skeleton className="h-3 w-1/6" />
+            <Skeleton className="h-3 w-1/6" />
+            <Skeleton className="ml-auto h-3 w-16" />
           </div>
         ))}
       </div>
@@ -34,9 +35,9 @@ export function LoadingSkeleton({ className, rows = 4, variant = "line" }: Loadi
   }
 
   return (
-    <div className={cn("animate-pulse space-y-2.5", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {Array.from({ length: rows }).map((_, index) => (
-        <div key={index} className="h-3 rounded bg-neutral-200 dark:bg-neutral-800" style={{ width: `${100 - index * 12}%` }} />
+        <Skeleton key={index} className="h-3" style={{ width: `${100 - index * 12}%` }} />
       ))}
     </div>
   );

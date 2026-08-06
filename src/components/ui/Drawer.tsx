@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
-import { XIcon } from "@/components/ui/icons";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utilities/cn";
 
 export interface DrawerProps {
@@ -16,35 +17,46 @@ export interface DrawerProps {
 
 /** Side-panel primitive, used for detail views (e.g. a case or document preview) in later phases. */
 export function Drawer({ open, onClose, title, description, children, side = "right", className }: DrawerProps) {
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex fade-in">
       <div className="absolute inset-0 bg-neutral-950/50" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="drawer-title"
+        aria-labelledby={titleId}
         className={cn(
-          "relative z-10 flex h-full w-full max-w-md flex-col overflow-y-auto border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900",
+          "relative z-10 flex h-full w-full max-w-md flex-col overflow-y-auto border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-md)]",
           side === "right" ? "ml-auto border-l" : "mr-auto border-r",
           className,
         )}
       >
         <div className="flex items-start justify-between">
-          <h2 id="drawer-title" className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 id={titleId} className="text-h4 text-[color:var(--color-text-primary)]">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close panel"
-            className="focus-ring rounded-md p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            className="focus-ring rounded-md p-1 text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)]"
           >
-            <XIcon className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
-        {description ? <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{description}</p> : null}
+        {description ? <p className="mt-1 text-body text-[color:var(--color-text-secondary)]">{description}</p> : null}
         {children ? <div className="mt-4 flex-1">{children}</div> : null}
       </div>
     </div>,

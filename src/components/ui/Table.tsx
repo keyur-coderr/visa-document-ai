@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utilities/cn";
+import { TableWrapper } from "@/components/ui/TableWrapper";
 
 export interface TableColumn<T> {
   id: string;
@@ -18,29 +19,29 @@ export interface TableProps<T> {
 /** Generic, presentation-only data table — no sorting/filtering logic. */
 export function Table<T>({ columns, rows, getRowKey, onRowClick, className }: TableProps<T>) {
   return (
-    <div className={cn("overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800", className)}>
-      <table className="w-full min-w-[640px] divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
-        <thead className="bg-neutral-50 dark:bg-neutral-900">
+    <TableWrapper className={className}>
+      <table className="w-full min-w-[640px] divide-y divide-[color:var(--color-border)] text-sm">
+        <thead className="bg-[color:var(--color-surface-subtle)]">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.id}
                 scope="col"
-                className={cn("px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400", column.className)}
+                className={cn("px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[color:var(--color-text-secondary)]", column.className)}
               >
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-200 bg-white dark:divide-neutral-800 dark:bg-neutral-900">
+        <tbody className="divide-y divide-[color:var(--color-border)] bg-[color:var(--color-surface)]">
           {rows.map((row) => (
             <tr
               key={getRowKey(row)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
-                "text-neutral-700 dark:text-neutral-300",
-                onRowClick && "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/60",
+                "text-[color:var(--color-text-primary)]",
+                onRowClick && "cursor-pointer transition-colors hover:bg-[color:var(--color-surface-subtle)]",
               )}
             >
               {columns.map((column) => (
@@ -52,6 +53,6 @@ export function Table<T>({ columns, rows, getRowKey, onRowClick, className }: Ta
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 }

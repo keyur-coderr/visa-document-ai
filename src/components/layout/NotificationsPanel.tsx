@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BellIcon } from "@/components/ui/icons";
+import { Bell } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 interface NotificationItem {
@@ -55,7 +55,7 @@ export function NotificationsPanel() {
         aria-label="Notifications"
         className="focus-ring relative rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
       >
-        <BellIcon className="h-5 w-5" />
+        <Bell className="h-5 w-5" />
         {notifications.length > 0 ? (
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger-500" aria-hidden="true" />
         ) : null}

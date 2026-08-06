@@ -15,6 +15,7 @@ export const spacing = {
   sm: 8,
   md: 12,
   lg: 16,
+  xl2: 20,
   xl: 24,
   "2xl": 32,
   "3xl": 48,
@@ -25,15 +26,18 @@ export type SpacingToken = keyof typeof spacing;
 
 /** Font sizes (px) and weights used across the app shell. */
 export const typography = {
+  family: {
+    sans: "Inter, system-ui, sans-serif",
+  },
   fontSize: {
-    xs: 12,
-    sm: 13,
-    base: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    "2xl": 24,
-    "3xl": 30,
+    caption: 12,
+    small: 13,
+    body: 14,
+    h4: 18,
+    h3: 20,
+    h2: 24,
+    h1: 30,
+    display: 40,
   },
   fontWeight: {
     regular: 400,
@@ -50,12 +54,40 @@ export const typography = {
 
 /** Matches tailwind.config.ts `theme.extend.colors`. */
 export const colorTokens = {
-  brand: "brand",
-  success: "success",
-  warning: "warning",
-  danger: "danger",
-  info: "info",
-  neutral: "neutral",
+  background: "#f8fafc",
+  surface: "#ffffff",
+  primary: "#2563eb",
+  accent: "#7c3aed",
+  success: "#22c55e",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  textPrimary: "#0f172a",
+  textSecondary: "#64748b",
+  border: "#e2e8f0",
+} as const;
+
+export const radii = {
+  sm: 8,
+  md: 10,
+  lg: 14,
+  xl: 18,
+} as const;
+
+export const shadows = {
+  xs: "0 1px 2px rgb(15 23 42 / 0.06)",
+  sm: "0 2px 6px rgb(15 23 42 / 0.08)",
+  md: "0 10px 28px rgb(15 23 42 / 0.12)",
+} as const;
+
+export const motion = {
+  fast: 140,
+  base: 220,
+  slow: 320,
+} as const;
+
+export const layout = {
+  contentMax: 1200,
+  narrowMax: 960,
 } as const;
 
 /** Matches tailwind.config.ts `theme.extend.screens` plus Tailwind defaults. */

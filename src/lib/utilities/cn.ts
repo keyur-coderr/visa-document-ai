@@ -1,21 +1,11 @@
-/** Combines conditional class names without pulling in an extra dependency. */
-export type ClassValue = string | number | null | undefined | false | Record<string, boolean | undefined>;
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
+/**
+ * Shared className helper for conditional and conflict-safe class composition.
+ * - clsx handles conditional values
+ * - twMerge resolves Tailwind utility collisions
+ */
 export function cn(...values: ClassValue[]): string {
-  const classes: string[] = [];
-
-  for (const value of values) {
-    if (!value) continue;
-
-    if (typeof value === "string" || typeof value === "number") {
-      classes.push(String(value));
-      continue;
-    }
-
-    for (const [key, enabled] of Object.entries(value)) {
-      if (enabled) classes.push(key);
-    }
-  }
-
-  return classes.join(" ");
+  return twMerge(clsx(values));
 }

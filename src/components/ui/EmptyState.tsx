@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utilities/cn";
 import { AlertTriangleIcon, InboxIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/Button";
 
 export interface EmptyStateProps {
   variant?: "empty" | "error";
@@ -34,16 +35,12 @@ export function EmptyState({ variant = "empty", title, description, action, clas
       </span>
       <h3 className="mt-4 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
       {description ? (
-        <p className="mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">{description}</p>
+        <p className="mt-1 max-w-sm text-body text-[color:var(--color-text-secondary)]">{description}</p>
       ) : null}
       {action ? (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="focus-ring mt-4 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
+        <Button type="button" onClick={action.onClick} className="mt-4">
           {action.label}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
