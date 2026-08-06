@@ -143,9 +143,14 @@ export default function CaseDetailPage() {
       title={caseRecord.title}
       description="Stream-configured intake, checklist, forms, documents, timeline, and notes."
       actions={
-        <Link href="/cases/new" className="focus-ring rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          Create New Case
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/cases/${caseId}/workflow`} className="focus-ring rounded-lg border border-neutral-200 px-3.5 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">
+            Workflow
+          </Link>
+          <Link href="/cases/new" className="focus-ring rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            Create New Case
+          </Link>
+        </div>
       }
     >
       <div className="space-y-4">

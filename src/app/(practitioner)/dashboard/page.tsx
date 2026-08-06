@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { PageState, useDemoPageState } from "@/components/ui/PageState";
 import { StatCard } from "@/components/ui/StatCard";
@@ -17,6 +18,16 @@ import { DashboardIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 
+interface LifecycleWidgets {
+  upcomingDeadlines: Array<{ id: string; title: string; dueAt: string | null; priority: string }>;
+  todaysReminders: number;
+  overdueTasks: Array<{ id: string; title: string; dueAt: string | null; priority: string }>;
+  waitingForClient: number;
+  waitingForConsultant: number;
+  recentlyUpdatedCases: Array<{ caseId: string; title: string; updatedAt: string }>;
+  recentNotifications: Array<{ id: string; title: string; status: string; createdAt: string }>;
+}
+
 function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
@@ -29,6 +40,25 @@ export default function DashboardPage() {
   const [status, setStatus] = useDemoPageState("ready");
   const summaryCases = mockCases.slice(0, 4);
   const { showToast, clearToasts } = useToast();
+  const [widgets, setWidgets] = useState<LifecycleWidgets | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/dashboard/lifecycle-widgets", { method: "GET" });
+        const payload = await response.json();
+        if (!active || !response.ok || !payload.ok) return;
+        setWidgets(payload.widgets as LifecycleWidgets);
+      } catch {
+        // Keep the existing dashboard sections visible if lifecycle widgets fail to load.
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <PageContainer
@@ -184,6 +214,63 @@ export default function DashboardPage() {
                     {Math.round(documentStatSummary.averageConfidence * 100)}%
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section aria-label="Lifecycle workflow widgets" className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Deadlines</CardTitle>
+                <CardDescription>Nearest due workflow tasks.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {widgets?.upcomingDeadlines?.length ? (
+                  <ul className="space-y-2">
+                    {widgets.upcomingDeadlines.map((item) => (
+                      <li key={item.id} className="rounded-lg border border-neutral-100 px-3 py-2 text-sm dark:border-neutral-800">
+                        <p className="font-medium text-neutral-800 dark:text-neutral-200">{item.title}</p>
+                        <p className="text-xs text-neutral-500">Due: {item.dueAt ? new Date(item.dueAt).toLocaleString() : "N/A"}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-neutral-500">No upcoming deadlines.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Workflow Queue</CardTitle>
+                <CardDescription>Reminder and waiting-state counts.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p className="text-neutral-700 dark:text-neutral-300">Today's reminders: <span className="font-semibold">{widgets?.todaysReminders ?? 0}</span></p>
+                <p className="text-neutral-700 dark:text-neutral-300">Waiting for client: <span className="font-semibold">{widgets?.waitingForClient ?? 0}</span></p>
+                <p className="text-neutral-700 dark:text-neutral-300">Waiting for consultant: <span className="font-semibold">{widgets?.waitingForConsultant ?? 0}</span></p>
+                <p className="text-neutral-700 dark:text-neutral-300">Overdue tasks: <span className="font-semibold">{widgets?.overdueTasks?.length ?? 0}</span></p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Notifications</CardTitle>
+                <CardDescription>Latest lifecycle notifications.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {widgets?.recentNotifications?.length ? (
+                  <ul className="space-y-2">
+                    {widgets.recentNotifications.map((item) => (
+                      <li key={item.id} className="rounded-lg border border-neutral-100 px-3 py-2 text-sm dark:border-neutral-800">
+                        <p className="font-medium text-neutral-800 dark:text-neutral-200">{item.title}</p>
+                        <p className="text-xs text-neutral-500">{item.status} · {formatRelativeTime(item.createdAt)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-neutral-500">No recent notifications.</p>
+                )}
               </CardContent>
             </Card>
           </section>
