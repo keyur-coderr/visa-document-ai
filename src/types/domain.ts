@@ -265,11 +265,14 @@ export interface DocumentRequirement {
 export type UploadSource = "client_portal" | "practitioner_upload" | "assistant_upload";
 
 export type DocumentStatus =
+  | "missing"
   | "uploaded"
   | "processing"
   | "needs_review"
+  | "needs_reupload"
   | "approved"
   | "rejected"
+  | "expired"
   | "duplicate";
 
 export interface Document {

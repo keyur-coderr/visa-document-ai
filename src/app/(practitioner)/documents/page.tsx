@@ -1,90 +1,50 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DocumentWorkspace } from "@/components/documents/DocumentWorkspace";
+import { MockUploadPanel, type UploadResult } from "@/components/documents/MockUploadPanel";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { PageState, useDemoPageState } from "@/components/ui/PageState";
-import { SearchBar } from "@/components/ui/SearchBar";
-import { FilterBar } from "@/components/ui/FilterBar";
-import { Table, type TableColumn } from "@/components/ui/Table";
-import { StatusChip } from "@/components/ui/StatusChip";
-import { Pagination } from "@/components/ui/Pagination";
-import { mockDocuments, type MockDocument } from "@/lib/mock/documents";
-import { documentStatusPresentation, aiConfidenceBand } from "@/lib/utilities/status";
-
-const PAGE_SIZE = 6;
-
-const statusFilterOptions = [
-  { label: "All Statuses", value: "all" },
-  ...Object.entries(documentStatusPresentation).map(([value, presentation]) => ({
-    label: presentation.label,
-    value,
-  })),
-];
-
-function formatSize(sizeKb: number): string {
-  if (sizeKb >= 1024) return `${(sizeKb / 1024).toFixed(1)} MB`;
-  return `${sizeKb} KB`;
-}
+import {
+  mockChecklistDocumentLinks,
+  mockDuplicateGroups,
+  mockManagedDocuments,
+  mockUploadSessions,
+  withExhibitLabels,
+  type MockManagedDocument,
+} from "@/lib/mock/documents";
 
 export default function DocumentsPage() {
   const [status, setStatus] = useDemoPageState("ready");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [page, setPage] = useState(1);
+  const [documents, setDocuments] = useState<MockManagedDocument[]>(mockManagedDocuments.map((item) => ({ ...item })));
+  const [checklistLinks, setChecklistLinks] = useState(mockChecklistDocumentLinks.map((item) => ({ ...item })));
 
-  const filtered = useMemo(() => {
-    return mockDocuments.filter((doc) => {
-      const matchesSearch =
-        !search ||
-        doc.filename.toLowerCase().includes(search.toLowerCase()) ||
-        doc.caseTitle.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || doc.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [search, statusFilter]);
+  const rows = useMemo(() => withExhibitLabels(documents), [documents]);
 
-  const totalPages = Math.max(Math.ceil(filtered.length / PAGE_SIZE), 1);
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  function handleUpload(results: UploadResult[]) {
+    const successful = results.filter((result) => result.state === "success");
+    if (successful.length === 0) return;
 
-  const columns: TableColumn<MockDocument>[] = [
-    {
-      id: "filename",
-      header: "Document",
-      cell: (row) => (
-        <div>
-          <p className="font-medium text-neutral-800 dark:text-neutral-200">{row.filename}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{row.caseTitle}</p>
-        </div>
-      ),
-    },
-    {
-      id: "category",
-      header: "Category",
-      cell: (row) => <span className="text-neutral-600 dark:text-neutral-400">{row.category}</span>,
-    },
-    {
-      id: "status",
-      header: "Status",
-      cell: (row) => {
-        const presentation = documentStatusPresentation[row.status];
-        return <StatusChip label={presentation.label} tone={presentation.tone} />;
-      },
-    },
-    {
-      id: "confidence",
-      header: "AI Confidence",
-      cell: (row) => {
-        if (row.confidence === null) return <span className="text-neutral-400">—</span>;
-        const band = aiConfidenceBand(row.confidence);
-        return <StatusChip label={`${band.percent}% · ${band.label}`} tone={band.tone} />;
-      },
-    },
-    {
-      id: "size",
-      header: "Size",
-      cell: (row) => <span className="text-neutral-600 dark:text-neutral-400">{formatSize(row.sizeKb)}</span>,
-    },
-  ];
+    const fallback = documents[0];
+    if (!fallback) return;
+
+    setDocuments((existing) => [
+      ...successful.map((result, index) => ({
+        ...fallback,
+        id: `doc_mock_${Date.now()}_${index}`,
+        filename: result.fileName,
+        sizeKb: result.sizeKb,
+        status: "uploaded" as const,
+        checksumPlaceholder: "sha256:mock-upload",
+        uploadedAt: new Date().toISOString(),
+        exhibitOrder: (existing.filter((document) => document.caseId === fallback.caseId).length || 0) + index,
+      })),
+      ...existing,
+    ]);
+  }
 
   return (
     <PageContainer title="Documents" description="Every document uploaded across your firm's cases.">
@@ -96,36 +56,54 @@ export default function DocumentsPage() {
         errorDescription="We couldn't load documents. Try again in a moment."
         skeletonVariant="table"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search documents or cases..." className="sm:w-72" />
-            <FilterBar
-              filters={[
-                {
-                  id: "status",
-                  label: "Status",
-                  value: statusFilter,
-                  options: statusFilterOptions,
-                  onChange: (value) => {
-                    setStatusFilter(value);
-                    setPage(1);
-                  },
-                },
-              ]}
-            />
-          </div>
+        <div className="space-y-4">
+          <MockUploadPanel caseId={null} onUploadComplete={handleUpload} />
 
-          {filtered.length === 0 ? (
-            <PageState status="empty" emptyTitle="No matching documents" emptyDescription="Try a different search term or filter.">
-              <div />
-            </PageState>
-          ) : (
-            <>
-              <Table columns={columns} rows={pageRows} getRowKey={(row) => row.id} />
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            </>
-          )}
-        </div>
+          <DocumentWorkspace
+            title="Documents Workspace"
+            documents={documents}
+            onDocumentsChange={setDocuments}
+            checklistLinks={checklistLinks}
+            onChecklistLinksChange={setChecklistLinks}
+            rows={rows}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Sessions</CardTitle>
+              <CardDescription>Mock upload queue/session records.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {mockUploadSessions.map((session) => (
+                <div key={session.id} className="rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
+                  <p className="font-medium text-neutral-800 dark:text-neutral-200">{session.fileName}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{session.sizeKb} KB · {session.progressPercent}% · {session.state}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Duplicate Detection Placeholder</CardTitle>
+              <CardDescription>Suspected duplicate groups based on filename/checksum placeholders.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {mockDuplicateGroups.map((group) => (
+                <div key={group.id} className="rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{group.matchingFilenames.join(" vs ")}</p>
+                    <Badge tone={group.status === "suspected" ? "warning" : "neutral"}>
+                      {group.status === "suspected" ? "Suspected Duplicate" : "Review Complete"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Checksum placeholder: {group.matchingChecksumPlaceholder}</p>
+                  <Button size="sm" variant="secondary" className="mt-2">{group.reviewerActionLabel}</Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          </div>
       </PageState>
     </PageContainer>
   );

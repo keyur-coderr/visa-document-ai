@@ -27,11 +27,14 @@ export const caseStatusPresentation: Record<CaseStatus, StatusPresentation> = {
 };
 
 export const documentStatusPresentation: Record<DocumentStatus, StatusPresentation> = {
+  missing: { label: "Missing", tone: "danger" },
   uploaded: { label: "Uploaded", tone: "info" },
   processing: { label: "Processing", tone: "warning" },
   needs_review: { label: "Needs Review", tone: "warning" },
+  needs_reupload: { label: "Needs Re-upload", tone: "warning" },
   approved: { label: "Approved", tone: "success" },
   rejected: { label: "Rejected", tone: "danger" },
+  expired: { label: "Expired", tone: "neutral" },
   duplicate: { label: "Duplicate", tone: "neutral" },
 };
 
