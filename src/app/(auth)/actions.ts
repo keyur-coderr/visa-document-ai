@@ -77,6 +77,34 @@ export async function signInWithMagicLinkAction(formData: FormData) {
   redirect("/login?status=magic_link_sent");
 }
 
+export async function signInWithClientMagicLinkAction(formData: FormData) {
+  const email = readString(formData, "email").toLowerCase();
+  if (!assertValidEmail(email)) {
+    redirect("/portal/login?error=invalid_email");
+  }
+
+  if (!isSupabaseEnabled()) {
+    setMockAuthCookies(email, "client");
+    redirect("/portal");
+  }
+
+  const client = getSupabaseServerClient();
+  if (!client) redirect("/portal/login?error=supabase_not_configured");
+
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback?next=/portal`,
+    },
+  });
+  if (error) {
+    safeLog("client_magic_link_failed", { reason: error.message, mode: "supabase" });
+    redirect("/portal/login?error=magic_link_failed");
+  }
+
+  redirect("/portal/login?status=magic_link_sent");
+}
+
 export async function signUpPractitionerAction(formData: FormData) {
   const fullName = readString(formData, "fullName");
   const firmName = readString(formData, "firmName");

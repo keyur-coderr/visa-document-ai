@@ -4,7 +4,8 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const requestedNext = searchParams.get("next");
+  const next = requestedNext === "/portal" || requestedNext === "/dashboard" ? requestedNext : "/dashboard";
 
   const client = getSupabaseServerClient();
   if (!client || !code) {

@@ -20,12 +20,13 @@ export async function getAuthSession(): Promise<AuthSession> {
     const cookieStore = cookies();
     const signedIn = cookieStore.get(MOCK_AUTH_COOKIE)?.value === "1";
     const roleCookie = cookieStore.get(MOCK_ROLE_COOKIE)?.value;
-    const role = roleCookie === "practitioner" || roleCookie === "assistant" || roleCookie === "client" ? roleCookie : "practitioner";
+    const role =
+      roleCookie === "practitioner" || roleCookie === "assistant" || roleCookie === "client"
+        ? roleCookie
+        : null;
 
-    // Preserve Phase 1-4 navigation behavior by allowing unsigned mock browsing,
-    // while still enabling mock auth flows from login.
     return {
-      isAuthenticated: signedIn || true,
+      isAuthenticated: signedIn,
       userId: signedIn ? "mock-user" : null,
       email: cookieStore.get(MOCK_EMAIL_COOKIE)?.value ?? null,
       role,
@@ -77,14 +78,16 @@ export async function getAuthSession(): Promise<AuthSession> {
 
 export function setMockAuthCookies(email: string, role: UserRole = "practitioner") {
   const cookieStore = cookies();
-  cookieStore.set(MOCK_AUTH_COOKIE, "1", { httpOnly: true, sameSite: "lax", secure: true, path: "/" });
-  cookieStore.set(MOCK_ROLE_COOKIE, role, { httpOnly: true, sameSite: "lax", secure: true, path: "/" });
-  cookieStore.set(MOCK_EMAIL_COOKIE, email, { httpOnly: true, sameSite: "lax", secure: true, path: "/" });
+  const secure = process.env.NODE_ENV === "production";
+  cookieStore.set(MOCK_AUTH_COOKIE, "1", { httpOnly: true, sameSite: "lax", secure, path: "/" });
+  cookieStore.set(MOCK_ROLE_COOKIE, role, { httpOnly: true, sameSite: "lax", secure, path: "/" });
+  cookieStore.set(MOCK_EMAIL_COOKIE, email, { httpOnly: true, sameSite: "lax", secure, path: "/" });
 }
 
 export function clearMockAuthCookies() {
   const cookieStore = cookies();
-  cookieStore.set(MOCK_AUTH_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
-  cookieStore.set(MOCK_ROLE_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
-  cookieStore.set(MOCK_EMAIL_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
+  const secure = process.env.NODE_ENV === "production";
+  cookieStore.set(MOCK_AUTH_COOKIE, "", { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 0 });
+  cookieStore.set(MOCK_ROLE_COOKIE, "", { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 0 });
+  cookieStore.set(MOCK_EMAIL_COOKIE, "", { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 0 });
 }

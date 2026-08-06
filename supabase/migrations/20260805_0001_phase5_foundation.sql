@@ -51,6 +51,12 @@ create type public.document_status as enum (
 create type public.upload_source as enum ('client_portal', 'practitioner_upload', 'assistant_upload');
 create type public.case_flag_severity as enum ('low', 'medium', 'high');
 create type public.case_flag_status as enum ('open', 'in_progress', 'resolved', 'dismissed');
+create type public.intake_completion_status as enum ('not_started', 'in_progress', 'submitted', 'reviewed');
+create type public.milestone_status as enum ('pending', 'in_progress', 'completed');
+create type public.deadline_status as enum ('upcoming', 'due_soon', 'overdue', 'completed', 'cancelled');
+create type public.risk_tier as enum ('standard', 'elevated', 'high');
+create type public.case_flag_raised_by_type as enum ('ai', 'human', 'system');
+create type public.approval_action as enum ('approve', 'reject', 'override');
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -95,7 +101,7 @@ create table public.clients (
 create trigger trg_clients_updated_at before update on public.clients for each row execute function public.set_updated_at();
 
 create table public.profiles (
-  id uuid primary key,
+  id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
   full_name text not null,
   role public.app_role not null,
@@ -150,7 +156,7 @@ create table public.cases (
   title text not null,
   status public.case_status not null default 'draft',
   current_milestone public.milestone_key not null default 'intake',
-  risk_tier text not null default 'standard',
+  risk_tier public.risk_tier not null default 'standard',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -185,7 +191,7 @@ create table public.intake_responses (
   case_id uuid not null references public.cases(id) on delete cascade,
   stream_config_version integer not null,
   answers jsonb not null default '{}'::jsonb,
-  completion_status text not null default 'not_started',
+  completion_status public.intake_completion_status not null default 'not_started',
   submitted_at timestamptz,
   reviewed_at timestamptz,
   created_at timestamptz not null default now(),
@@ -247,7 +253,7 @@ create table public.case_milestones (
   id uuid primary key default gen_random_uuid(),
   case_id uuid not null references public.cases(id) on delete cascade,
   milestone public.milestone_key not null,
-  status text not null default 'pending',
+  status public.milestone_status not null default 'pending',
   completed_by uuid references public.profiles(id) on delete set null,
   completed_at timestamptz,
   created_at timestamptz not null default now(),
@@ -264,7 +270,7 @@ create table public.deadlines (
   type text not null,
   due_date date not null,
   reminder_schedule jsonb not null default '{"offsetsDays":[30,15,3]}'::jsonb,
-  status text not null default 'upcoming',
+  status public.deadline_status not null default 'upcoming',
   created_by uuid not null references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -281,7 +287,7 @@ create table public.case_flags (
   description text not null,
   status public.case_flag_status not null default 'open',
   assigned_to uuid references public.profiles(id) on delete set null,
-  raised_by_type text not null default 'human',
+  raised_by_type public.case_flag_raised_by_type not null default 'human',
   resolution_note text,
   resolved_by uuid references public.profiles(id) on delete set null,
   resolved_at timestamptz,
@@ -308,7 +314,7 @@ create table public.approvals (
   case_id uuid not null references public.cases(id) on delete cascade,
   entity_type text not null,
   entity_id text not null,
-  action text not null,
+  action public.approval_action not null,
   approved_by uuid not null references public.profiles(id) on delete restrict,
   approved_at timestamptz not null default now(),
   version integer not null default 1,
