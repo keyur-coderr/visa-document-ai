@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDownIcon } from "@/components/ui/icons";
 
-/** Mock signed-in practitioner used until Supabase Auth is wired up in Phase 4. */
+/** Placeholder user card; auth profile binding is completed in a later phase. */
 const mockCurrentUser = {
   name: "Priya Nair",
   role: "Practitioner (RCIC)",
@@ -67,7 +67,7 @@ export function UserMenu() {
             Settings
           </Link>
           <Link
-            href="/login"
+            href="/auth/logout"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="block border-t border-neutral-200 px-3.5 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
